@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Settings → Appearance → Interface scale uses a menu instead of a slider, so adjusting it no longer rescales the UI mid-gesture. In #557.
+
 ## [0.5.0] - 2026-09-29
 
 ### Added
