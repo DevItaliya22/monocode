@@ -50,7 +50,11 @@ import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { LAYER } from "../../../shared/lib/layers";
 import { HarnessIcon } from "./HarnessIcon";
 import { Popover } from "../../../shared/ui/Popover";
-import { graceArea, inGrace, type Grace } from "../../../shared/lib/safeTriangle";
+import {
+  graceArea,
+  inGrace,
+  type Grace,
+} from "../../../shared/lib/safeTriangle";
 import { MOD } from "../../../platform/tauri/platform";
 import { keybindingPressed } from "../../settings/model/settings";
 import "./ModelPicker.css";
@@ -622,6 +626,12 @@ export function ModelPicker({
     if (hoveredRow.current === index) return;
     const point = { x: event.clientX, y: event.clientY };
     if (grace.current && inGrace(point, grace.current)) return;
+    activateEntry(index, entry);
+  };
+
+  // A click always wins over the safe triangle: the row under the pointer
+  // becomes active even if hover was suppressed while aiming at a submenu.
+  const activateEntry = (index: number, entry: MenuEntry) => {
     grace.current = null;
     hoveredRow.current = index;
     setActive(index);
@@ -826,7 +836,7 @@ export function ModelPicker({
                     onMouseEnter={(event) => hoverEntry(index, entry, event)}
                     onMouseMove={(event) => hoverEntry(index, entry, event)}
                     onMouseLeave={leaveEntry}
-                    onClick={() => showEntrySubmenu(entry)}
+                    onClick={() => activateEntry(index, entry)}
                     className={`flex h-9 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] ${
                       highlighted
                         ? "bg-selection text-content"
@@ -873,7 +883,7 @@ export function ModelPicker({
                     if (isToggle) {
                       setSetting(setting, value === "true" ? "false" : "true");
                     } else {
-                      showEntrySubmenu(entry);
+                      activateEntry(index, entry);
                     }
                   }}
                   className={`flex h-9 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] ${

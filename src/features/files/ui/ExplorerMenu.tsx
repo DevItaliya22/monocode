@@ -9,7 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import { LAYER } from "../../../shared/lib/layers";
-import { graceArea, inGrace, type Grace } from "../../../shared/lib/safeTriangle";
+import {
+  graceArea,
+  inGrace,
+  type Grace,
+} from "../../../shared/lib/safeTriangle";
 import { Check, ChevronRight } from "../../../shared/ui/icons";
 import { Popover } from "../../../shared/ui/Popover";
 
@@ -258,7 +262,10 @@ export function ExplorerMenu({
         onClick={(e) => {
           if (item.disabled) return;
           if (hasSubmenu) {
+            grace.current = null;
+            hoveredRow.current = index;
             cancelClose();
+            setActive(index);
             setSubmenu({ index, anchor: e.currentTarget });
             setSubmenuActive(0);
             submenuRef.current?.focus();

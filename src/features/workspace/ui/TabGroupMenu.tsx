@@ -419,7 +419,11 @@ export function TabGroupMenu({
                   }
                   onLeave={leaveRow}
                   onPick={(anchor) => {
-                    if (item.submenu) setSubmenu({ item, anchor });
+                    if (item.submenu) {
+                      grace.current = null;
+                      hoveredRow.current = item.id;
+                      setSubmenu({ item, anchor });
+                    }
                     else pickExtra(item.id);
                   }}
                 />
