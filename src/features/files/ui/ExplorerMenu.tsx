@@ -5,9 +5,11 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
 import { LAYER } from "../../../shared/lib/layers";
+import { graceArea, inGrace, type Grace } from "../../../shared/lib/safeTriangle";
 import { Check, ChevronRight } from "../../../shared/ui/icons";
 import { Popover } from "../../../shared/ui/Popover";
 
@@ -76,6 +78,8 @@ export function ExplorerMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const submenuRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const grace = useRef<Grace | null>(null);
+  const hoveredRow = useRef<number | null>(null);
   const [active, setActive] = useState(() => itemIndexAt(items, 0, 1));
   const [submenu, setSubmenu] = useState<{
     index: number;
@@ -93,6 +97,7 @@ export function ExplorerMenu({
 
   const closeSubmenu = () => {
     cancelClose();
+    grace.current = null;
     if (submenuRef.current?.contains(document.activeElement)) {
       menuRef.current?.focus();
     }
@@ -103,6 +108,34 @@ export function ExplorerMenu({
   const scheduleClose = () => {
     cancelClose();
     closeTimer.current = setTimeout(closeSubmenu, 180);
+  };
+
+  const hoverParentItem = (
+    index: number,
+    item: MenuAction & { submenu?: MenuAction[] },
+    event: ReactMouseEvent<HTMLButtonElement>,
+  ) => {
+    if (hoveredRow.current === index) return;
+    const point = { x: event.clientX, y: event.clientY };
+    if (grace.current && inGrace(point, grace.current)) return;
+    grace.current = null;
+    hoveredRow.current = index;
+    cancelClose();
+    setActive(index);
+    if (item.submenu?.length && !item.disabled) {
+      setSubmenu({ index, anchor: event.currentTarget });
+      setSubmenuActive(-1);
+    } else {
+      closeSubmenu();
+    }
+  };
+
+  const leaveParentItem = (event: ReactMouseEvent) => {
+    hoveredRow.current = null;
+    const rect = submenuRef.current?.getBoundingClientRect();
+    grace.current = rect
+      ? graceArea({ x: event.clientX, y: event.clientY }, rect)
+      : null;
   };
 
   useEffect(() => cancelClose, []);
@@ -206,19 +239,21 @@ export function ExplorerMenu({
         disabled={item.disabled}
         onMouseDown={(e) => e.preventDefault()}
         onMouseEnter={(e) => {
-          cancelClose();
           if (inSubmenu) {
+            cancelClose();
             setSubmenuActive(index);
             submenuRef.current?.focus();
             return;
           }
-          setActive(index);
-          if (hasSubmenu && !item.disabled) {
-            setSubmenu({ index, anchor: e.currentTarget });
-            setSubmenuActive(-1);
-          } else {
-            closeSubmenu();
-          }
+          hoverParentItem(index, item, e);
+        }}
+        onMouseMove={(e) => {
+          if (inSubmenu) return;
+          hoverParentItem(index, item, e);
+        }}
+        onMouseLeave={(e) => {
+          if (inSubmenu) return;
+          leaveParentItem(e);
         }}
         onClick={(e) => {
           if (item.disabled) return;
@@ -340,6 +375,7 @@ export function ExplorerMenu({
           onKeyDown={onMenuKey}
           onContextMenu={(e) => e.preventDefault()}
           onMouseEnter={() => {
+            grace.current = null;
             cancelClose();
             onMouseEnter?.();
           }}
