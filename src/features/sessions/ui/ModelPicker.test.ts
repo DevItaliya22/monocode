@@ -249,17 +249,32 @@ describe("model picker", () => {
       )!;
 
     hover(row("Effort"));
-    // Leaving Effort arms the grace triangle; happy-dom's zero-size rects make
-    // it cover every point, so the move onto Model is swallowed.
+    const effortMenu = container.querySelector<HTMLElement>(
+      '[role="menu"][aria-label="Effort"]',
+    )!;
+    vi.spyOn(effortMenu, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ x: 280, y: 0, width: 200, height: 300 }),
+    );
+    // Leaving Effort toward its submenu arms the grace triangle, so crossing
+    // Model on the way does not take over.
     act(() => {
       row("Effort").dispatchEvent(
-        new MouseEvent("mouseout", { bubbles: true }),
+        new MouseEvent("mouseout", {
+          bubbles: true,
+          clientX: 200,
+          clientY: 60,
+        }),
       );
       row("Model").dispatchEvent(
-        new MouseEvent("mouseover", { bubbles: true }),
+        new MouseEvent("mouseover", {
+          bubbles: true,
+          clientX: 220,
+          clientY: 50,
+        }),
       );
     });
     expect(row("Model").getAttribute("aria-expanded")).toBe("false");
+    expect(row("Effort").getAttribute("aria-expanded")).toBe("true");
 
     act(() => row("Model").click());
     expect(row("Model").getAttribute("aria-expanded")).toBe("true");
@@ -808,9 +823,7 @@ describe("model picker", () => {
       );
       const effortRow = [
         ...container.querySelectorAll<HTMLButtonElement>("button"),
-      ].find((button) =>
-        button.textContent?.startsWith(settingLabel),
-      )!;
+      ].find((button) => button.textContent?.startsWith(settingLabel))!;
       hover(effortRow);
 
       expect(
